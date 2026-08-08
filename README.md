@@ -28,7 +28,8 @@ masquerades as working.
 |---|---|
 | `game/GameApi.java` | **The facade.** Client-neutral interface all bot logic talks to. The seam that makes the port possible. |
 | `game/MicrobotGameApi.java` | Microbot implementation of the facade (delegates to `Rs2*`). Slice methods implemented; rest are honest `TODO` throws. |
-| `slice/WoodcuttingSlice.java` | **Vertical-slice proof** — a real woodcutting loop with zero client-specific code. The shape every ported trainer takes. |
+| `slice/GatherLoop.java` | **Shared skilling engine** — the reusable gather loop thin trainers sit on (mirrors OSRS-Main's design). Client-neutral. |
+| `slice/WoodcuttingSlice.java` · `slice/MiningSlice.java` | **Two thin trainers** on the shared loop — the proof it generalises past one skill with zero new facade surface. The shape every ported trainer takes. |
 | `QuinnMainPlugin.java` | RuneLite plugin entry (`@PluginDescriptor`). |
 | `QuinnMainScript.java` | The scheduled loop (Microbot `Script`). |
 | `QuinnMainConfig.java` | RuneLite config for the slice. |
