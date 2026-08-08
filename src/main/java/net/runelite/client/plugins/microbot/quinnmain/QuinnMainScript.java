@@ -26,8 +26,10 @@ public class QuinnMainScript extends Script {
 
     public boolean run(QuinnMainConfig config) {
         this.config = config;
-        this.woodcutting = new WoodcuttingSlice(game, config);
-        this.mining = new MiningSlice(game, config);
+        this.woodcutting = new WoodcuttingSlice(game, config.spotX(), config.spotY(),
+                config.treeName(), config.logId(), config.bankWhenFull());
+        this.mining = new MiningSlice(game, config.mineX(), config.mineY(),
+                config.rockName(), config.oreId(), config.bankWhenFull());
         Microbot.enableAutoRunOn = true;
 
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
