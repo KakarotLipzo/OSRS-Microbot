@@ -1,0 +1,28 @@
+# Build output
+build/
+out/
+target/
+*.class
+*.jar
+
+# Gradle
+.gradle/
+gradle-app.setting
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs / local
+*.log
+local.properties
