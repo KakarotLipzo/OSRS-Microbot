@@ -122,6 +122,10 @@ public interface GameApi {
     /** Open shop's stock as "name#id x amount" strings (for the live-debug dump). */
     List<String> shopStock();
 
+    // ── Session (breaks) ─────────────────────────────────────────────────────────────────────
+    boolean logout();
+    boolean login();
+
     // ── Timing ───────────────────────────────────────────────────────────────────────────────
     void sleep(int ms);
     boolean waitUntil(java.util.function.BooleanSupplier cond, int timeoutMs);

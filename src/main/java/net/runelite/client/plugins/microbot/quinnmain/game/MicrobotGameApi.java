@@ -250,6 +250,13 @@ public final class MicrobotGameApi implements GameApi {
         return out;
     }
 
+    // ── session ──────────────────────────────────────────────────────────────────────────────
+    @Override public boolean logout() { try { return Rs2Player.logout(); } catch (Throwable t) { return false; } } // TODO verify (Rs2Player.logout / Logout util)
+    @Override public boolean login() {
+        // TODO verify: Microbot manages login via the Login util / profile; wire to the fork's mechanism.
+        try { new net.runelite.client.plugins.microbot.util.security.Login(); return true; } catch (Throwable t) { return false; }
+    }
+
     // ── timing ───────────────────────────────────────────────────────────────────────────────
     @Override public void sleep(int ms) { net.runelite.client.plugins.microbot.util.Global.sleep(ms); }
     @Override public boolean waitUntil(java.util.function.BooleanSupplier cond, int timeoutMs) {
