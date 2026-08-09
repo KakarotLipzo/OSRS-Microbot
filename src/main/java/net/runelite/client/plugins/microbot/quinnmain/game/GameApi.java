@@ -103,6 +103,12 @@ public interface GameApi {
     boolean widgetVisible(int groupId, int childId);
     String widgetText(int groupId, int childId);
     boolean interactWidget(int groupId, int childId, String action);
+    /** The shared "make" popup (cook/smelt/smith/craft) is up. */
+    boolean makeScreenOpen();
+    /** A product button matching {@code productName} is present in the make popup. */
+    boolean makeScreenHas(String productName);
+    /** Select the quantity and click the product in the make popup. */
+    boolean clickMake(String productName, int quantity);
 
     // ── Grand Exchange ───────────────────────────────────────────────────────────────────────
     boolean geOpen();

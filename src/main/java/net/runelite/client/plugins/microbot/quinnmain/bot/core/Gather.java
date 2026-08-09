@@ -207,15 +207,65 @@ public final class Gather {
                 + ") — stock: " + (stock.isEmpty() ? "EMPTY/none" : String.join("  ", stock)));
     }
 
-    // ── processing (need MakeInterface — next wave) ──────────────────────────────────────────────
+    // ── processing (smelt/cook via the make screen; mill = quest-specific, still TODO) ────────────
     public static int smelt(int barId, String barName, int oreIdToUse, Pos furnaceSite, int qty) {
-        throw new UnsupportedOperationException("TODO port: smelt needs MakeInterface (make-screen wave).");
+        GameApi a = g(); if (a == null) return 700;
+        try {
+            if (a.invCount(barId) >= qty) return 0;
+            if (MakeInterface.isOpen(barName)) return runMake(barName, oreIdToUse);
+            if (a.isAnimating()) return 600;
+            GameObj furnace = closestObject(o -> o.name() != null && o.name().toLowerCase().contains("furnace"), 8);
+            if (furnace == null || furnace.distance() > 5) {
+                if (furnace == null && atSite(furnaceSite)) logNearbyObjects(barName, "furnace", "Smelt");
+                Nav.walkTo(furnace != null ? furnace.position() : furnaceSite);
+                return 700;
+            }
+            boolean opened = furnace.useItem(oreIdToUse) || furnace.interact("Smelt");
+            if (opened) {
+                a.waitUntil(() -> MakeInterface.isOpen() || a.isAnimating(), 3000);
+                if (MakeInterface.isOpen(barName)) return runMake(barName, oreIdToUse);
+            }
+            return 700;
+        } catch (Throwable t) { Log.log("[gather] smelt " + barName + " failed (" + t + ")."); return 700; }
     }
+
     public static int cook(int cookedId, String cookedName, int rawId, Pos cookSpot, int qty) {
-        throw new UnsupportedOperationException("TODO port: cook needs MakeInterface (make-screen wave).");
+        GameApi a = g(); if (a == null) return 700;
+        try {
+            if (a.invCount(cookedId) >= qty) return 0;
+            if (MakeInterface.isOpen(cookedName) || MakeInterface.isOpen()) return runMake(cookedName, rawId);
+            if (a.isAnimating()) return 600;
+            if (!a.invContains(rawId)) return 0;   // nothing to cook — caller supplies raw food
+            GameObj cooker = closestObject(o -> o.name() != null
+                    && (o.name().toLowerCase().contains("range") || o.name().equalsIgnoreCase("Fire")
+                        || o.name().toLowerCase().contains("stove") || o.name().toLowerCase().contains("cooking")), 8);
+            if (cooker == null || cooker.distance() > 5) {
+                if (cooker == null && atSite(cookSpot)) logNearbyObjects(cookedName, "range", "Cook");
+                Nav.walkTo(cooker != null ? cooker.position() : cookSpot);
+                return 700;
+            }
+            boolean opened = cooker.useItem(rawId) || cooker.interact("Cook");
+            if (opened) {
+                a.waitUntil(() -> MakeInterface.isOpen() || a.isAnimating(), 3000);
+                if (MakeInterface.isOpen()) return runMake(cookedName, rawId);
+            }
+            return 700;
+        } catch (Throwable t) { Log.log("[gather] cook " + cookedName + " failed (" + t + ")."); return 700; }
     }
+
+    /** Select All + click the product in the make screen, then grind the batch until the input is used up. */
+    private static int runMake(String productName, int watchInputId) {
+        GameApi a = g(); if (a == null) return 900;
+        String act = MakeInterface.click(productName);
+        if (act == null) { Log.log("[gather] make button not found for " + productName + "; " + MakeInterface.describe()); return 900; }
+        Log.log("[gather] making " + productName + " (" + act + ").");
+        a.waitUntil(a::isAnimating, 3000);
+        a.waitUntil(() -> a.invCount(watchInputId) == 0 || (!a.isAnimating() && !MakeInterface.isOpen()), 120000);
+        return 800;
+    }
+
     public static int mill(int potOfFlourId, int grainId, int emptyPotId, Pos millGround, int qty) {
-        throw new UnsupportedOperationException("TODO port: windmill mill flow (uses object useItem + multi-floor nav).");
+        throw new UnsupportedOperationException("TODO port: windmill mill flow (multi-floor climb + hopper/bin useItem).");
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────────────────────────

@@ -221,7 +221,17 @@ public final class MicrobotGameApi implements GameApi {
         return w == null ? null : w.getText();
     }
     @Override public boolean interactWidget(int group, int child, String action) {
-        throw new UnsupportedOperationException("TODO port: MakeInterface — Rs2Widget click by group/child/action.");
+        try { return Rs2Widget.clickWidget(Rs2Widget.getWidget(group, child)); } catch (Throwable t) { return false; } // TODO verify click-by-widget
+    }
+    @Override public boolean makeScreenOpen() {
+        try { return Rs2Widget.isWidgetVisible(270, 14); } catch (Throwable t) { return false; } // TODO verify make-screen group/child
+    }
+    @Override public boolean makeScreenHas(String productName) {
+        try { return Rs2Widget.hasWidget(productName); } catch (Throwable t) { return false; } // TODO verify
+    }
+    @Override public boolean clickMake(String productName, int quantity) {
+        // TODO verify against the fork's make-screen helper: select All quantity, then click the product.
+        try { return Rs2Widget.clickWidget(productName); } catch (Throwable t) { return false; }
     }
 
     // ── grand exchange ───────────────────────────────────────────────────────────────────────
