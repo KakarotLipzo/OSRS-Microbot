@@ -1,0 +1,5 @@
+# Normalize line endings; keep shell scripts LF.
+* text=auto
+*.sh text eol=lf
+*.java text
+*.md text
