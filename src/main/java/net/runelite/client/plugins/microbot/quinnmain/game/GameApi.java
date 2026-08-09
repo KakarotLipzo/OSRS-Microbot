@@ -118,6 +118,8 @@ public interface GameApi {
     boolean geBuy(int itemId, int quantity, int unitPrice);
     boolean geSell(int itemId, int quantity, int unitPrice);
     boolean geCollectAll();
+    boolean geClose();
+    boolean geReadyToCollect();
 
     // ── Shops ────────────────────────────────────────────────────────────────────────────────
     boolean shopOpen();

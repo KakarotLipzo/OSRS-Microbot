@@ -213,6 +213,8 @@ public final class MicrobotGameApi implements GameApi {
         throw new UnsupportedOperationException("TODO port: money engine — Rs2GrandExchange.sellItem.");
     }
     @Override public boolean geCollectAll() { return Rs2GrandExchange.collectAllToBank(); }
+    @Override public boolean geClose() { try { return Rs2GrandExchange.closeExchange(); } catch (Throwable t) { return false; } } // TODO verify name
+    @Override public boolean geReadyToCollect() { try { return Rs2GrandExchange.hasBoughtOffer() || Rs2GrandExchange.hasSoldOffer(); } catch (Throwable t) { return false; } } // TODO verify
 
     // ── shops ────────────────────────────────────────────────────────────────────────────────
     @Override public boolean shopOpen() {
