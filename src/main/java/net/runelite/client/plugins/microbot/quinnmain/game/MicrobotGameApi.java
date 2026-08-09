@@ -348,6 +348,7 @@ public final class MicrobotGameApi implements GameApi {
         @Override public boolean interactingWithMe() {
             try { return n.getInteracting() == Microbot.getClient().getLocalPlayer(); } catch (Throwable t) { return false; }
         }
+        @Override public boolean useItem(int itemId) { try { return Rs2Inventory.useItemOnNpc(itemId, n); } catch (Throwable t) { return false; } } // TODO verify
     }
     private static final class GeOfferHandle implements GeOffer {
         final int slot; final net.runelite.api.GrandExchangeOffer o;

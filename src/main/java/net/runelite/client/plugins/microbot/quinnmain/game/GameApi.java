@@ -161,6 +161,8 @@ public interface GameApi {
         boolean hasAction(String action);
         boolean interact(String action);
         boolean interactingWithMe();
+        /** Use a carried inventory item on this NPC (item→NPC). */
+        boolean useItem(int itemId);
     }
     /** Rich handle to a ground item. */
     interface GroundItem {
