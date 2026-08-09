@@ -39,6 +39,16 @@ public interface GameApi {
     int skillLevel(String skill);
     int skillLevelReal(String skill);
     long skillXp(String skill);
+    /** XP remaining to the next level for a skill (0 at 99 / unknown). */
+    int xpToLevel(String skill);
+    /** All skills' XP, indexed by {@link Sk#ordinal()} (SAILING → 0). For the XP tracker. */
+    long[] allSkillXp();
+    String username();
+    boolean isMembers();
+    int totalLevel();
+    int questPoints();
+    /** VarClientInt read (e.g. 526 = Time Played minutes). */
+    int varcInt(int id);
 
     // ── Movement ─────────────────────────────────────────────────────────────────────────────
     /** Walk toward a tile (web-walks if far). Returns once the walk has been kicked off. */

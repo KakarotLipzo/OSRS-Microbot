@@ -42,7 +42,15 @@ public final class MicrobotGameApi implements GameApi {
     private static WorldPoint wp(Pos p) { return new WorldPoint(p.x, p.y, p.plane); }
     private static Pos pos(WorldPoint w) { return w == null ? null : new Pos(w.getX(), w.getY(), w.getPlane()); }
 
-    private static Skill skill(String name) { return Skill.valueOf(name.trim().toUpperCase()); }
+    /** Map a neutral skill name to RuneLite's enum. RUNECRAFTING→RUNECRAFT; SAILING has no RL skill → null. */
+    private static Skill rl(String name) {
+        if (name == null) return null;
+        String n = name.trim().toUpperCase();
+        if (n.equals("RUNECRAFTING")) return Skill.RUNECRAFT;
+        if (n.equals("SAILING")) return null;
+        try { return Skill.valueOf(n); } catch (Exception e) { return null; }
+    }
+    private static Skill skill(String name) { return rl(name); }
 
     // ── local player ─────────────────────────────────────────────────────────────────────────
     @Override public boolean isLoggedIn() { return Microbot.isLoggedIn(); }
@@ -54,9 +62,33 @@ public final class MicrobotGameApi implements GameApi {
     @Override public int combatLevel() {
         try { return Microbot.getClient().getLocalPlayer().getCombatLevel(); } catch (Throwable t) { return 3; }
     }
-    @Override public int skillLevel(String s) { return Microbot.getClient().getBoostedSkillLevel(skill(s)); }
-    @Override public int skillLevelReal(String s) { return Microbot.getClient().getRealSkillLevel(skill(s)); }
-    @Override public long skillXp(String s) { return Microbot.getClient().getSkillExperience(skill(s)); }
+    @Override public int skillLevel(String s) { Skill k = rl(s); return k == null ? 1 : Microbot.getClient().getBoostedSkillLevel(k); }
+    @Override public int skillLevelReal(String s) { Skill k = rl(s); return k == null ? 1 : Microbot.getClient().getRealSkillLevel(k); }
+    @Override public long skillXp(String s) { Skill k = rl(s); return k == null ? 0 : Microbot.getClient().getSkillExperience(k); }
+    @Override public int xpToLevel(String s) {
+        Skill k = rl(s); if (k == null) return 0;
+        int lvl = Microbot.getClient().getRealSkillLevel(k);
+        if (lvl >= 99) return 0;
+        return Math.max(0, net.runelite.api.Experience.getXpForLevel(lvl + 1) - Microbot.getClient().getSkillExperience(k));
+    }
+    @Override public long[] allSkillXp() {
+        Sk[] vals = Sk.values();
+        long[] out = new long[vals.length];
+        for (Sk sk : vals) { Skill k = rl(sk.name()); out[sk.ordinal()] = k == null ? 0 : Microbot.getClient().getSkillExperience(k); }
+        return out;
+    }
+    @Override public String username() {
+        try { return Microbot.getClient().getLocalPlayer().getName(); } catch (Throwable t) { return null; }
+    }
+    @Override public boolean isMembers() {
+        // TODO verify: RuneLite reports the WORLD's type, not account membership. Proxy via members world.
+        try { return Microbot.getClient().getWorldType() != null
+                && Microbot.getClient().getWorldType().contains(net.runelite.api.WorldType.MEMBERS); }
+        catch (Throwable t) { return false; }
+    }
+    @Override public int totalLevel() { try { return Microbot.getClient().getTotalLevel(); } catch (Throwable t) { return 0; } }
+    @Override public int questPoints() { try { return Microbot.getClient().getVarpValue(101); } catch (Throwable t) { return 0; } } // TODO verify QP varp id
+    @Override public int varcInt(int id) { try { return Microbot.getClient().getVarcIntValue(id); } catch (Throwable t) { return 0; } }
 
     // ── movement ─────────────────────────────────────────────────────────────────────────────
     @Override public boolean walkTo(Pos target) { return Rs2Walker.walkTo(wp(target)); }
