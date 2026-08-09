@@ -112,9 +112,17 @@ public final class MicrobotGameApi implements GameApi {
     @Override public int invEmptySlots() { return Rs2Inventory.getEmptySlots(); }
     @Override public boolean invInteract(int id, String action) { return Rs2Inventory.interact(id, action); }
     @Override public boolean invDropAll(int... ids) { boolean any = false; for (int id : ids) any |= Rs2Inventory.dropAll(id); return any; }
+    @Override public boolean invDropAllExcept(int... keep) {
+        try { Rs2Inventory.dropAllExcept(keep); return true; } catch (Throwable t) { return false; } // TODO verify signature
+    }
     @Override public List<String> inventoryItemNames() {
         List<String> out = new ArrayList<>();
         try { for (var it : Rs2Inventory.all()) if (it != null && it.getName() != null) out.add(it.getName()); } catch (Throwable ignored) { }
+        return out;
+    }
+    @Override public List<Integer> inventoryItemIds() {
+        List<Integer> out = new ArrayList<>();
+        try { for (var it : Rs2Inventory.all()) if (it != null) out.add(it.getId()); } catch (Throwable ignored) { }
         return out;
     }
 

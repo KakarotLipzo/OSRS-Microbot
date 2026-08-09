@@ -55,8 +55,11 @@ public interface GameApi {
     int invEmptySlots();
     boolean invInteract(int itemId, String action);
     boolean invDropAll(int... itemIds);
+    boolean invDropAllExcept(int... keepItemIds);
     /** Names of all carried items (for name-substring checks like "any pickaxe"). */
     List<String> inventoryItemNames();
+    /** Item ids of all carried items (for junk detection). */
+    List<Integer> inventoryItemIds();
 
     // ── Equipment ────────────────────────────────────────────────────────────────────────────
     boolean isWearing(int itemId);
