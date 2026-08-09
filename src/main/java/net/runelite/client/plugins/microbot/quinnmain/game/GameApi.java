@@ -7,23 +7,14 @@ import java.util.List;
  *
  * Every trainer, quest, combat routine and money method in Quinn Main talks to the game through
  * <b>this interface only</b>, never through DreamBot's {@code org.dreambot.*} or Microbot's
- * {@code Rs2*} classes directly. That is what lets the same logic (coords, tables, state machines)
- * run on either client: you swap the {@link GameApi} implementation, not the logic.
+ * {@code Rs2*} classes directly. Swap the {@link GameApi} implementation, not the logic.
  *
- * <ul>
- *   <li>{@code DreamBotGameApi} — implemented in OSRS-Main by delegating to {@code Nav}/{@code Bank}/… (retrofit).</li>
- *   <li>{@link MicrobotGameApi} — implemented here by delegating to the static {@code Rs2*} utilities.</li>
- * </ul>
+ * <p><b>Coordinates.</b> The facade speaks {@link Pos} (a plain x/y/plane triple), not DreamBot
+ * {@code Tile} or RuneLite {@code WorldPoint} — same values, so tile constants carry over unchanged.
  *
- * <p><b>Coordinates.</b> The facade speaks {@link Pos} (a plain x/y/plane triple), NOT DreamBot
- * {@code Tile} or RuneLite {@code WorldPoint}. Both have the same game coordinate values, so every
- * tile/area constant in the ported logic carries over unchanged — the adapter just converts
- * {@code Pos} ↔ the client's own point type at the boundary.
- *
- * <p><b>This interface grows with the port.</b> It currently covers the surface the vertical-slice
- * proof needs plus the obvious neighbours. As each subsystem is ported (see PORT_PLAN.md), add the
- * methods it needs here and implement them in every adapter. Keep it small and behavioural — model
- * <i>what the bot wants to do</i>, not the client's raw API.
+ * <p><b>Finder style.</b> Object/NPC/ground-item finders return <i>lists</i> of rich handles; the
+ * neutral logic does its own filtering (by id/name/action/distance) in plain Java. This keeps the
+ * facade small and moves the (client-neutral) predicate logic into the ported code where it already lives.
  */
 public interface GameApi {
 
@@ -32,6 +23,7 @@ public interface GameApi {
     Pos playerPosition();
     boolean isMoving();
     boolean isAnimating();
+    boolean isInCombat();
     int healthPercent();
     int runEnergy();
     int combatLevel();
@@ -51,9 +43,7 @@ public interface GameApi {
     int varcInt(int id);
 
     // ── Movement ─────────────────────────────────────────────────────────────────────────────
-    /** Walk toward a tile (web-walks if far). Returns once the walk has been kicked off. */
     boolean walkTo(Pos target);
-    /** True once within {@code radius} tiles of {@code target}. */
     boolean arrived(Pos target, int radius);
     double distanceTo(Pos target);
 
@@ -65,10 +55,13 @@ public interface GameApi {
     int invEmptySlots();
     boolean invInteract(int itemId, String action);
     boolean invDropAll(int... itemIds);
+    /** Names of all carried items (for name-substring checks like "any pickaxe"). */
+    List<String> inventoryItemNames();
 
     // ── Equipment ────────────────────────────────────────────────────────────────────────────
     boolean isWearing(int itemId);
     boolean equip(int itemId);
+    List<String> equipmentItemNames();
 
     // ── Banking ──────────────────────────────────────────────────────────────────────────────
     boolean bankIsOpen();
@@ -81,28 +74,27 @@ public interface GameApi {
     boolean deposit(int itemId, int amount);
     boolean depositAllExcept(int... keepItemIds);
     boolean depositInventory();
-    /** Snapshot of open-bank contents (item id → quantity), for BankMemory. Empty if closed/unreadable. */
     java.util.Map<Integer, Integer> bankSnapshot();
 
-    // ── Objects (trees, rocks, banks, doors, altars…) ────────────────────────────────────────
-    /** Nearest reachable game object whose name matches any of {@code names}, or null. */
+    // ── Objects ──────────────────────────────────────────────────────────────────────────────
+    /** All game objects within {@code tiles} of the player (for logic-side filtering). */
+    List<GameObj> objectsWithin(int tiles);
+    /** Convenience: nearest object matching any of {@code names}, or null. */
     GameObj nearestObject(String... names);
     GameObj nearestObjectById(int... ids);
     boolean interactObject(GameObj obj, String action);
 
     // ── NPCs ─────────────────────────────────────────────────────────────────────────────────
+    List<Npc> npcsWithin(int tiles);
     Npc nearestNpc(String... names);
     boolean interactNpc(Npc npc, String action);
-    boolean isInteractingWithMe(Npc npc);
 
     // ── Ground items ─────────────────────────────────────────────────────────────────────────
-    GroundItem nearestGroundItem(int maxTiles, int... itemIds);
-    boolean takeGroundItem(GroundItem item);
+    List<GroundItem> groundItemsWithin(int tiles);
 
     // ── Dialogue ─────────────────────────────────────────────────────────────────────────────
     boolean dialogueOpen();
     boolean hasDialogueOptions();
-    /** The currently offered dialogue option strings, in order. */
     List<String> dialogueOptions();
     boolean selectDialogueOption(int oneBasedIndex);
     boolean continueDialogue();
@@ -122,21 +114,40 @@ public interface GameApi {
     boolean geReadyToCollect();
 
     // ── Shops ────────────────────────────────────────────────────────────────────────────────
-    boolean shopOpen();
-    boolean shopBuy(String itemName, int quantity);
+    boolean shopIsOpen();
+    boolean openShop(String npcName);
+    boolean closeShop();
+    boolean shopPurchase(int itemId, int qty);
+    boolean shopPurchase(String itemName, int qty);
+    /** Open shop's stock as "name#id x amount" strings (for the live-debug dump). */
+    List<String> shopStock();
 
-    // ── Timing (client-driven waits, not Thread.sleep in logic) ──────────────────────────────
+    // ── Timing ───────────────────────────────────────────────────────────────────────────────
     void sleep(int ms);
-    /** Block up to {@code timeoutMs} until {@code cond} is true; returns whether it became true. */
     boolean waitUntil(java.util.function.BooleanSupplier cond, int timeoutMs);
 
     // ── Value types ──────────────────────────────────────────────────────────────────────────
-    // Pos is a top-level class in this package (game/Pos.java) — used pervasively by ported logic.
+    // Pos is a top-level class in this package (game/Pos.java).
 
-    /** Opaque handle to a game object; the adapter knows its concrete client type. */
-    interface GameObj { Pos position(); int id(); String name(); }
-    /** Opaque handle to an NPC. */
-    interface Npc { Pos position(); int id(); String name(); }
-    /** Opaque handle to a ground item. */
-    interface GroundItem { Pos position(); int id(); int quantity(); }
+    /** Rich handle to a game object. */
+    interface GameObj {
+        int id(); String name(); Pos position(); double distance();
+        boolean hasAction(String action);
+        boolean exists();
+        boolean interact(String action);
+        /** Use a carried inventory item on this object (item→object). */
+        boolean useItem(int itemId);
+    }
+    /** Rich handle to an NPC. */
+    interface Npc {
+        int id(); String name(); Pos position(); double distance();
+        boolean hasAction(String action);
+        boolean interact(String action);
+        boolean interactingWithMe();
+    }
+    /** Rich handle to a ground item. */
+    interface GroundItem {
+        int id(); String name(); Pos position(); double distance(); int quantity();
+        boolean take();
+    }
 }

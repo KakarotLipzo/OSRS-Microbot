@@ -6,6 +6,8 @@ import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
+import net.runelite.client.plugins.microbot.util.combat.Rs2Combat;
+import net.runelite.client.plugins.microbot.util.shop.Rs2Shop;
 import net.runelite.client.plugins.microbot.util.dialogues.Rs2Dialogue;
 import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
@@ -57,6 +59,7 @@ public final class MicrobotGameApi implements GameApi {
     @Override public Pos playerPosition() { return pos(Rs2Player.getWorldLocation()); }
     @Override public boolean isMoving() { return Rs2Player.isMoving(); }
     @Override public boolean isAnimating() { return Rs2Player.isAnimating(); }
+    @Override public boolean isInCombat() { try { return Rs2Player.isInteracting() || Rs2Combat.inCombat(); } catch (Throwable t) { return false; } } // TODO verify
     @Override public int healthPercent() { return Rs2Player.getHealthPercentage(); }
     @Override public int runEnergy() { return (int) Microbot.getClient().getEnergy() / 100; }
     @Override public int combatLevel() {
@@ -109,10 +112,20 @@ public final class MicrobotGameApi implements GameApi {
     @Override public int invEmptySlots() { return Rs2Inventory.getEmptySlots(); }
     @Override public boolean invInteract(int id, String action) { return Rs2Inventory.interact(id, action); }
     @Override public boolean invDropAll(int... ids) { boolean any = false; for (int id : ids) any |= Rs2Inventory.dropAll(id); return any; }
+    @Override public List<String> inventoryItemNames() {
+        List<String> out = new ArrayList<>();
+        try { for (var it : Rs2Inventory.all()) if (it != null && it.getName() != null) out.add(it.getName()); } catch (Throwable ignored) { }
+        return out;
+    }
 
     // ── equipment ────────────────────────────────────────────────────────────────────────────
     @Override public boolean isWearing(int id) { return Rs2Equipment.isWearing(id); }
     @Override public boolean equip(int id) { return Rs2Inventory.interact(id, "Wield") || Rs2Inventory.interact(id, "Wear"); }
+    @Override public List<String> equipmentItemNames() {
+        List<String> out = new ArrayList<>();
+        try { for (var it : Rs2Equipment.items()) if (it != null && it.getName() != null) out.add(it.getName()); } catch (Throwable ignored) { } // TODO verify Rs2Equipment.items()
+        return out;
+    }
 
     // ── banking ──────────────────────────────────────────────────────────────────────────────
     @Override public boolean bankIsOpen() { return Rs2Bank.isOpen(); }
@@ -141,9 +154,15 @@ public final class MicrobotGameApi implements GameApi {
     }
 
     // ── objects ──────────────────────────────────────────────────────────────────────────────
+    @Override public List<GameObj> objectsWithin(int tiles) {
+        List<GameObj> out = new ArrayList<>();
+        try { for (GameObject o : Rs2GameObject.getGameObjects()) if (o != null) out.add(new ObjHandle(o)); } // TODO verify getGameObjects()
+        catch (Throwable ignored) { }
+        return out;
+    }
     @Override public GameObj nearestObject(String... names) {
         for (String name : names) {
-            GameObject o = Rs2GameObject.findObject(name, true);   // TODO verify: name lookup helper
+            GameObject o = Rs2GameObject.findObject(name, true);   // TODO verify name lookup helper
             if (o != null) return new ObjHandle(o);
         }
         return null;
@@ -160,6 +179,12 @@ public final class MicrobotGameApi implements GameApi {
     }
 
     // ── NPCs ─────────────────────────────────────────────────────────────────────────────────
+    @Override public List<Npc> npcsWithin(int tiles) {
+        List<Npc> out = new ArrayList<>();
+        try { for (NPC n : Rs2Npc.getNpcs()) if (n != null) out.add(new NpcHandle(n)); } // TODO verify getNpcs()
+        catch (Throwable ignored) { }
+        return out;
+    }
     @Override public Npc nearestNpc(String... names) {
         for (String name : names) {
             NPC n = Rs2Npc.getNpc(name);
@@ -170,16 +195,12 @@ public final class MicrobotGameApi implements GameApi {
     @Override public boolean interactNpc(Npc npc, String action) {
         return npc instanceof NpcHandle && Rs2Npc.interact(((NpcHandle) npc).n, action);
     }
-    @Override public boolean isInteractingWithMe(Npc npc) {
-        return npc instanceof NpcHandle && ((NpcHandle) npc).n.getInteracting() == Microbot.getClient().getLocalPlayer();
-    }
 
     // ── ground items ─────────────────────────────────────────────────────────────────────────
-    @Override public GroundItem nearestGroundItem(int maxTiles, int... itemIds) {
-        throw new UnsupportedOperationException("TODO port: looting subsystem (Rs2GroundItem.getNearest / loot).");
-    }
-    @Override public boolean takeGroundItem(GroundItem item) {
-        throw new UnsupportedOperationException("TODO port: looting subsystem.");
+    @Override public List<GroundItem> groundItemsWithin(int tiles) {
+        // TODO port: looting subsystem — map Rs2GroundItem's model to GroundItem handles. Empty for now
+        // (only the quest killFor() consumes this; quests are a later wave). Rs2GroundItem import kept for then.
+        return new ArrayList<>();
     }
 
     // ── dialogue ─────────────────────────────────────────────────────────────────────────────
@@ -217,11 +238,16 @@ public final class MicrobotGameApi implements GameApi {
     @Override public boolean geReadyToCollect() { try { return Rs2GrandExchange.hasBoughtOffer() || Rs2GrandExchange.hasSoldOffer(); } catch (Throwable t) { return false; } } // TODO verify
 
     // ── shops ────────────────────────────────────────────────────────────────────────────────
-    @Override public boolean shopOpen() {
-        throw new UnsupportedOperationException("TODO port: SupplyBuy — Rs2Shop.hasShopOpen.");
-    }
-    @Override public boolean shopBuy(String itemName, int quantity) {
-        throw new UnsupportedOperationException("TODO port: SupplyBuy — Rs2Shop.buyItem.");
+    @Override public boolean shopIsOpen() { try { return Rs2Shop.isOpen(); } catch (Throwable t) { return false; } } // TODO verify
+    @Override public boolean openShop(String npcName) { try { return Rs2Shop.openShop(npcName); } catch (Throwable t) { return false; } } // TODO verify
+    @Override public boolean closeShop() { try { return Rs2Shop.closeShop(); } catch (Throwable t) { return false; } } // TODO verify
+    @Override public boolean shopPurchase(int itemId, int qty) { try { return Rs2Shop.buyItem(String.valueOf(itemId), String.valueOf(qty)); } catch (Throwable t) { return false; } } // TODO verify id-vs-name signature
+    @Override public boolean shopPurchase(String itemName, int qty) { try { return Rs2Shop.buyItem(itemName, String.valueOf(qty)); } catch (Throwable t) { return false; } } // TODO verify
+    @Override public List<String> shopStock() {
+        List<String> out = new ArrayList<>();
+        try { for (var it : Rs2Shop.getShopItems()) if (it != null && it.getName() != null) out.add(it.getName() + "#" + it.getId()); } // TODO verify getShopItems()
+        catch (Throwable ignored) { }
+        return out;
     }
 
     // ── timing ───────────────────────────────────────────────────────────────────────────────
@@ -231,21 +257,50 @@ public final class MicrobotGameApi implements GameApi {
     }
 
     // ── handles ──────────────────────────────────────────────────────────────────────────────
+    private static double distTo(WorldPoint w) {
+        WorldPoint me = Rs2Player.getWorldLocation();
+        return (me == null || w == null) ? Double.MAX_VALUE : me.distanceTo(w);
+    }
+
     private static final class ObjHandle implements GameObj {
         final GameObject o;
         ObjHandle(GameObject o) { this.o = o; }
-        @Override public Pos position() { return pos(o.getWorldLocation()); }
         @Override public int id() { return o.getId(); }
         @Override public String name() {
             var c = Rs2GameObject.getObjectComposition(o.getId());
             return c == null ? null : c.getName();
         }
+        @Override public Pos position() { return pos(o.getWorldLocation()); }
+        @Override public double distance() { return distTo(o.getWorldLocation()); }
+        @Override public boolean hasAction(String action) {
+            try {
+                var c = Rs2GameObject.getObjectComposition(o.getId());
+                if (c == null || c.getActions() == null) return false;
+                for (String a : c.getActions()) if (a != null && a.equalsIgnoreCase(action)) return true;
+            } catch (Throwable ignored) { }
+            return false;
+        }
+        @Override public boolean exists() { try { return Rs2GameObject.exists(o); } catch (Throwable t) { return true; } } // TODO verify
+        @Override public boolean interact(String action) { return Rs2GameObject.interact(o, action); }
+        @Override public boolean useItem(int itemId) { try { return Rs2Inventory.useItemOnObject(itemId, o.getId()); } catch (Throwable t) { return false; } } // TODO verify
     }
     private static final class NpcHandle implements Npc {
         final NPC n;
         NpcHandle(NPC n) { this.n = n; }
-        @Override public Pos position() { return pos(n.getWorldLocation()); }
         @Override public int id() { return n.getId(); }
         @Override public String name() { return n.getName(); }
+        @Override public Pos position() { return pos(n.getWorldLocation()); }
+        @Override public double distance() { return distTo(n.getWorldLocation()); }
+        @Override public boolean hasAction(String action) {
+            try {
+                if (n.getComposition() == null || n.getComposition().getActions() == null) return false;
+                for (String a : n.getComposition().getActions()) if (a != null && a.equalsIgnoreCase(action)) return true;
+            } catch (Throwable ignored) { }
+            return false;
+        }
+        @Override public boolean interact(String action) { return Rs2Npc.interact(n, action); }
+        @Override public boolean interactingWithMe() {
+            try { return n.getInteracting() == Microbot.getClient().getLocalPlayer(); } catch (Throwable t) { return false; }
+        }
     }
 }
