@@ -290,6 +290,17 @@ public final class MicrobotGameApi implements GameApi {
         return out;
     }
 
+    // ── prayer ───────────────────────────────────────────────────────────────────────────────
+    private static net.runelite.client.plugins.microbot.util.prayer.Rs2PrayerEnum rsPrayer(String name) {
+        try { return net.runelite.client.plugins.microbot.util.prayer.Rs2PrayerEnum.valueOf(name); } catch (Throwable t) { return null; } // TODO verify enum names match
+    }
+    @Override public boolean isPrayerActive(String prayer) {
+        try { var p = rsPrayer(prayer); return p != null && net.runelite.client.plugins.microbot.util.prayer.Rs2Prayer.isPrayerActive(p); } catch (Throwable t) { return false; }
+    }
+    @Override public boolean setPrayer(String prayer, boolean on) {
+        try { var p = rsPrayer(prayer); if (p == null) return false; net.runelite.client.plugins.microbot.util.prayer.Rs2Prayer.toggle(p, on); return true; } catch (Throwable t) { return false; } // TODO verify toggle signature
+    }
+
     // ── session ──────────────────────────────────────────────────────────────────────────────
     @Override public boolean logout() { try { return Rs2Player.logout(); } catch (Throwable t) { return false; } } // TODO verify (Rs2Player.logout / Logout util)
     @Override public boolean login() {

@@ -137,6 +137,10 @@ public interface GameApi {
     /** Open shop's stock as "name#id x amount" strings (for the live-debug dump). */
     List<String> shopStock();
 
+    // ── Prayer ───────────────────────────────────────────────────────────────────────────────
+    boolean isPrayerActive(String prayer);
+    boolean setPrayer(String prayer, boolean on);
+
     // ── Session (breaks) ─────────────────────────────────────────────────────────────────────
     boolean logout();
     boolean login();
