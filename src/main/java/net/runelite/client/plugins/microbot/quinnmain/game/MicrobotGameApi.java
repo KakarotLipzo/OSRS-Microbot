@@ -51,6 +51,9 @@ public final class MicrobotGameApi implements GameApi {
     @Override public boolean isAnimating() { return Rs2Player.isAnimating(); }
     @Override public int healthPercent() { return Rs2Player.getHealthPercentage(); }
     @Override public int runEnergy() { return (int) Microbot.getClient().getEnergy() / 100; }
+    @Override public int combatLevel() {
+        try { return Microbot.getClient().getLocalPlayer().getCombatLevel(); } catch (Throwable t) { return 3; }
+    }
     @Override public int skillLevel(String s) { return Microbot.getClient().getBoostedSkillLevel(skill(s)); }
     @Override public int skillLevelReal(String s) { return Microbot.getClient().getRealSkillLevel(skill(s)); }
     @Override public long skillXp(String s) { return Microbot.getClient().getSkillExperience(skill(s)); }

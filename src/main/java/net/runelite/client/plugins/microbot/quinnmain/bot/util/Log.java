@@ -25,4 +25,10 @@ public final class Log {
     public static void log(String msg, Throwable t) {
         log(msg + " — " + t);
     }
+
+    // Aliases so ported code that used DreamBot Logger.info/warn/error keeps working.
+    public static void info(String msg)  { log(msg); }
+    public static void warn(String msg)  { log(msg); }
+    public static void error(String msg) { log(msg); }
+    public static void error(String msg, Throwable t) { log(msg, t); }
 }

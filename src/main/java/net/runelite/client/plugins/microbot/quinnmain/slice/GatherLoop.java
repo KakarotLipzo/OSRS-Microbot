@@ -2,7 +2,7 @@ package net.runelite.client.plugins.microbot.quinnmain.slice;
 
 import net.runelite.client.plugins.microbot.quinnmain.game.GameApi;
 import net.runelite.client.plugins.microbot.quinnmain.game.GameApi.GameObj;
-import net.runelite.client.plugins.microbot.quinnmain.game.GameApi.Pos;
+import net.runelite.client.plugins.microbot.quinnmain.game.Pos;
 
 /**
  * Shared "gather from a world object" loop — the reusable skilling engine that thin trainers sit on

@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.microbot.quinnmain.slice;
 
 import net.runelite.client.plugins.microbot.quinnmain.game.GameApi;
-import net.runelite.client.plugins.microbot.quinnmain.game.GameApi.Pos;
+import net.runelite.client.plugins.microbot.quinnmain.game.Pos;
 
 /**
  * Thin Woodcutting trainer — a {@link GatherLoop.Spec} over the shared engine. <b>Client-neutral:</b>

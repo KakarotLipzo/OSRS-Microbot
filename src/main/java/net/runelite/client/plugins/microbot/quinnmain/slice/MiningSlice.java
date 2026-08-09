@@ -1,7 +1,7 @@
 package net.runelite.client.plugins.microbot.quinnmain.slice;
 
 import net.runelite.client.plugins.microbot.quinnmain.game.GameApi;
-import net.runelite.client.plugins.microbot.quinnmain.game.GameApi.Pos;
+import net.runelite.client.plugins.microbot.quinnmain.game.Pos;
 
 /**
  * Thin Mining trainer — same {@link GatherLoop} as Woodcutting, different spec (rock names, "Mine",

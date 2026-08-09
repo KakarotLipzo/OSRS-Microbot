@@ -34,6 +34,7 @@ public interface GameApi {
     boolean isAnimating();
     int healthPercent();
     int runEnergy();
+    int combatLevel();
     /** Current (possibly boosted) level of a skill, by its canonical OSRS name e.g. "WOODCUTTING". */
     int skillLevel(String skill);
     int skillLevelReal(String skill);
@@ -116,14 +117,7 @@ public interface GameApi {
     boolean waitUntil(java.util.function.BooleanSupplier cond, int timeoutMs);
 
     // ── Value types ──────────────────────────────────────────────────────────────────────────
-
-    /** Client-neutral world coordinate. Same values as DreamBot Tile / RuneLite WorldPoint. */
-    final class Pos {
-        public final int x, y, plane;
-        public Pos(int x, int y, int plane) { this.x = x; this.y = y; this.plane = plane; }
-        public Pos(int x, int y) { this(x, y, 0); }
-        @Override public String toString() { return "(" + x + "," + y + "," + plane + ")"; }
-    }
+    // Pos is a top-level class in this package (game/Pos.java) — used pervasively by ported logic.
 
     /** Opaque handle to a game object; the adapter knows its concrete client type. */
     interface GameObj { Pos position(); int id(); String name(); }
