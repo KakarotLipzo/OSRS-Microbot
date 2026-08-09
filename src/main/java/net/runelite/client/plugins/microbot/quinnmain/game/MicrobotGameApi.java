@@ -238,12 +238,33 @@ public final class MicrobotGameApi implements GameApi {
     @Override public boolean geOpen() { return Rs2GrandExchange.isOpen(); }
     @Override public boolean openGe() { return Rs2GrandExchange.walkToGrandExchange(); }
     @Override public boolean geBuy(int itemId, int quantity, int unitPrice) {
-        throw new UnsupportedOperationException("TODO port: money engine — Rs2GrandExchange.buyItem (verify id vs name signature).");
+        try { return Rs2GrandExchange.buyItem(String.valueOf(itemId), quantity, unitPrice); } catch (Throwable t) { return false; } // TODO verify id-vs-name signature
     }
     @Override public boolean geSell(int itemId, int quantity, int unitPrice) {
-        throw new UnsupportedOperationException("TODO port: money engine — Rs2GrandExchange.sellItem.");
+        try { return Rs2GrandExchange.sellItem(itemId, quantity, unitPrice); } catch (Throwable t) { return false; } // TODO verify
     }
-    @Override public boolean geCollectAll() { return Rs2GrandExchange.collectAllToBank(); }
+    @Override public boolean geCollectAll() { try { return Rs2GrandExchange.collectAllToBank(); } catch (Throwable t) { return false; } }
+    @Override public boolean geCollectToBank() { try { return Rs2GrandExchange.collectAllToBank(); } catch (Throwable t) { return false; } }
+    @Override public int geUsedSlots() {
+        try {
+            int n = 0;
+            for (net.runelite.api.GrandExchangeOffer o : Microbot.getClient().getGrandExchangeOffers())
+                if (o != null && o.getState() != net.runelite.api.GrandExchangeOfferState.EMPTY) n++;
+            return n;
+        } catch (Throwable t) { return 0; }
+    }
+    @Override public List<GeOffer> geOffers() {
+        List<GeOffer> out = new ArrayList<>();
+        try {
+            net.runelite.api.GrandExchangeOffer[] arr = Microbot.getClient().getGrandExchangeOffers();
+            for (int slot = 0; slot < arr.length; slot++) {
+                net.runelite.api.GrandExchangeOffer o = arr[slot];
+                if (o != null && o.getState() != net.runelite.api.GrandExchangeOfferState.EMPTY) out.add(new GeOfferHandle(slot, o));
+            }
+        } catch (Throwable ignored) { }
+        return out;
+    }
+    @Override public boolean geCancel(int slot) { try { return Rs2GrandExchange.abortOffer(slot); } catch (Throwable t) { return false; } } // TODO verify abort signature
     @Override public boolean geClose() { try { return Rs2GrandExchange.closeExchange(); } catch (Throwable t) { return false; } } // TODO verify name
     @Override public boolean geReadyToCollect() { try { return Rs2GrandExchange.hasBoughtOffer() || Rs2GrandExchange.hasSoldOffer(); } catch (Throwable t) { return false; } } // TODO verify
 
@@ -319,5 +340,32 @@ public final class MicrobotGameApi implements GameApi {
         @Override public boolean interactingWithMe() {
             try { return n.getInteracting() == Microbot.getClient().getLocalPlayer(); } catch (Throwable t) { return false; }
         }
+    }
+    private static final class GeOfferHandle implements GeOffer {
+        final int slot; final net.runelite.api.GrandExchangeOffer o;
+        GeOfferHandle(int slot, net.runelite.api.GrandExchangeOffer o) { this.slot = slot; this.o = o; }
+        @Override public int itemId() { return o.getItemId(); }
+        @Override public int slot() { return slot; }
+        @Override public boolean buy() {
+            net.runelite.api.GrandExchangeOfferState s = o.getState();
+            return s == net.runelite.api.GrandExchangeOfferState.BUYING
+                    || s == net.runelite.api.GrandExchangeOfferState.BOUGHT
+                    || s == net.runelite.api.GrandExchangeOfferState.CANCELLED_BUY;
+        }
+        @Override public boolean sell() {
+            net.runelite.api.GrandExchangeOfferState s = o.getState();
+            return s == net.runelite.api.GrandExchangeOfferState.SELLING
+                    || s == net.runelite.api.GrandExchangeOfferState.SOLD
+                    || s == net.runelite.api.GrandExchangeOfferState.CANCELLED_SELL;
+        }
+        @Override public boolean readyToCollect() {
+            net.runelite.api.GrandExchangeOfferState s = o.getState();
+            return s == net.runelite.api.GrandExchangeOfferState.BOUGHT
+                    || s == net.runelite.api.GrandExchangeOfferState.SOLD
+                    || s == net.runelite.api.GrandExchangeOfferState.CANCELLED_BUY
+                    || s == net.runelite.api.GrandExchangeOfferState.CANCELLED_SELL;
+        }
+        @Override public int transferredAmount() { return o.getQuantitySold(); }
+        @Override public long transferredValue() { return o.getSpent(); }
     }
 }

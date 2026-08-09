@@ -116,8 +116,12 @@ public interface GameApi {
     boolean geBuy(int itemId, int quantity, int unitPrice);
     boolean geSell(int itemId, int quantity, int unitPrice);
     boolean geCollectAll();
+    boolean geCollectToBank();
     boolean geClose();
     boolean geReadyToCollect();
+    int geUsedSlots();
+    List<GeOffer> geOffers();
+    boolean geCancel(int slot);
 
     // ── Shops ────────────────────────────────────────────────────────────────────────────────
     boolean shopIsOpen();
@@ -159,5 +163,12 @@ public interface GameApi {
     interface GroundItem {
         int id(); String name(); Pos position(); double distance(); int quantity();
         boolean take();
+    }
+    /** A Grand Exchange offer slot in use. */
+    interface GeOffer {
+        int itemId(); int slot();
+        boolean buy(); boolean sell();
+        boolean readyToCollect();
+        int transferredAmount(); long transferredValue();
     }
 }
