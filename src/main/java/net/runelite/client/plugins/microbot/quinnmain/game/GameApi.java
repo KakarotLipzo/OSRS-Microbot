@@ -81,6 +81,8 @@ public interface GameApi {
     boolean deposit(int itemId, int amount);
     boolean depositAllExcept(int... keepItemIds);
     boolean depositInventory();
+    /** Snapshot of open-bank contents (item id → quantity), for BankMemory. Empty if closed/unreadable. */
+    java.util.Map<Integer, Integer> bankSnapshot();
 
     // ── Objects (trees, rocks, banks, doors, altars…) ────────────────────────────────────────
     /** Nearest reachable game object whose name matches any of {@code names}, or null. */

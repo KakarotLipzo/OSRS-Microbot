@@ -129,6 +129,16 @@ public final class MicrobotGameApi implements GameApi {
         return Rs2Bank.depositAllExcept(boxed);
     }
     @Override public boolean depositInventory() { return Rs2Bank.depositAll(); }
+    @Override public java.util.Map<Integer, Integer> bankSnapshot() {
+        java.util.Map<Integer, Integer> m = new java.util.HashMap<>();
+        try {
+            for (var it : Rs2Bank.bankItems()) {   // TODO verify method name (bankItems/getBankItems)
+                if (it == null) continue;
+                m.merge(it.getId(), Math.max(1, it.getQuantity()), Integer::sum);
+            }
+        } catch (Throwable ignored) { }
+        return m;
+    }
 
     // ── objects ──────────────────────────────────────────────────────────────────────────────
     @Override public GameObj nearestObject(String... names) {
