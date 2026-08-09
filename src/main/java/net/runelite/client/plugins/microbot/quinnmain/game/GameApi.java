@@ -54,6 +54,8 @@ public interface GameApi {
     boolean invIsFull();
     int invEmptySlots();
     boolean invInteract(int itemId, String action);
+    /** Use one carried item on another (e.g. tinderbox on logs). */
+    boolean useItemOnItem(int itemId1, int itemId2);
     boolean invDropAll(int... itemIds);
     boolean invDropAllExcept(int... keepItemIds);
     /** Names of all carried items (for name-substring checks like "any pickaxe"). */

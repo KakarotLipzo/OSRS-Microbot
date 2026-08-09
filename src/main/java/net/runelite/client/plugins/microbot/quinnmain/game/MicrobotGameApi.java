@@ -111,6 +111,7 @@ public final class MicrobotGameApi implements GameApi {
     @Override public boolean invIsFull() { return Rs2Inventory.isFull(); }
     @Override public int invEmptySlots() { return Rs2Inventory.getEmptySlots(); }
     @Override public boolean invInteract(int id, String action) { return Rs2Inventory.interact(id, action); }
+    @Override public boolean useItemOnItem(int a, int b) { try { return Rs2Inventory.combine(a, b); } catch (Throwable t) { return false; } } // TODO verify combine/useItemOnItem
     @Override public boolean invDropAll(int... ids) { boolean any = false; for (int id : ids) any |= Rs2Inventory.dropAll(id); return any; }
     @Override public boolean invDropAllExcept(int... keep) {
         try { Rs2Inventory.dropAllExcept(keep); return true; } catch (Throwable t) { return false; } // TODO verify signature
