@@ -62,6 +62,8 @@ public interface GameApi {
     List<String> inventoryItemNames();
     /** Item ids of all carried items (for junk detection). */
     List<Integer> inventoryItemIds();
+    /** Ids of carried items whose name contains {@code nameContains} (case-insensitive), e.g. "bones". */
+    List<Integer> inventoryItemIdsMatching(String nameContains);
 
     // ── Equipment ────────────────────────────────────────────────────────────────────────────
     boolean isWearing(int itemId);
@@ -93,6 +95,8 @@ public interface GameApi {
     List<Npc> npcsWithin(int tiles);
     Npc nearestNpc(String... names);
     boolean interactNpc(Npc npc, String action);
+    /** The NPC the local player is currently interacting with (fighting), or null. */
+    Npc interactingNpc();
 
     // ── Ground items ─────────────────────────────────────────────────────────────────────────
     List<GroundItem> groundItemsWithin(int tiles);
@@ -167,12 +171,17 @@ public interface GameApi {
         boolean hasAction(String action);
         boolean interact(String action);
         boolean interactingWithMe();
+        /** Health as a percent (0 = dead), or -1 if unknown. */
+        int healthPercent();
+        boolean isInCombat();
         /** Use a carried inventory item on this NPC (item→NPC). */
         boolean useItem(int itemId);
     }
     /** Rich handle to a ground item. */
     interface GroundItem {
         int id(); String name(); Pos position(); double distance(); int quantity();
+        boolean stackable();
+        int ownership();
         boolean take();
     }
     /** A Grand Exchange offer slot in use. */

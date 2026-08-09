@@ -126,6 +126,12 @@ public final class MicrobotGameApi implements GameApi {
         try { for (var it : Rs2Inventory.all()) if (it != null) out.add(it.getId()); } catch (Throwable ignored) { }
         return out;
     }
+    @Override public List<Integer> inventoryItemIdsMatching(String nameContains) {
+        List<Integer> out = new ArrayList<>();
+        String want = nameContains == null ? "" : nameContains.toLowerCase();
+        try { for (var it : Rs2Inventory.all()) if (it != null && it.getName() != null && it.getName().toLowerCase().contains(want)) out.add(it.getId()); } catch (Throwable ignored) { }
+        return out;
+    }
 
     // ── equipment ────────────────────────────────────────────────────────────────────────────
     @Override public boolean isWearing(int id) { return Rs2Equipment.isWearing(id); }
@@ -203,6 +209,12 @@ public final class MicrobotGameApi implements GameApi {
     }
     @Override public boolean interactNpc(Npc npc, String action) {
         return npc instanceof NpcHandle && Rs2Npc.interact(((NpcHandle) npc).n, action);
+    }
+    @Override public Npc interactingNpc() {
+        try {
+            var t = Microbot.getClient().getLocalPlayer().getInteracting();
+            return (t instanceof NPC) ? new NpcHandle((NPC) t) : null;
+        } catch (Throwable e) { return null; }
     }
 
     // ── ground items ─────────────────────────────────────────────────────────────────────────
@@ -360,6 +372,15 @@ public final class MicrobotGameApi implements GameApi {
         @Override public boolean interactingWithMe() {
             try { return n.getInteracting() == Microbot.getClient().getLocalPlayer(); } catch (Throwable t) { return false; }
         }
+        @Override public int healthPercent() {
+            try {
+                int ratio = n.getHealthRatio(), scale = n.getHealthScale();
+                if (scale <= 0) return -1;
+                if (ratio < 0) return 100;                 // full/unknown-but-alive
+                return (int) Math.round(ratio * 100.0 / scale);
+            } catch (Throwable t) { return -1; }
+        }
+        @Override public boolean isInCombat() { try { return n.getInteracting() != null; } catch (Throwable t) { return false; } }
         @Override public boolean useItem(int itemId) { try { return Rs2Inventory.useItemOnNpc(itemId, n); } catch (Throwable t) { return false; } } // TODO verify
     }
     private static final class GeOfferHandle implements GeOffer {
